@@ -1,0 +1,29 @@
+﻿<Window x:Class="PreviewHost.PreviewWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="PreviewWindow"
+        Height="450" Width="800"
+        MinWidth="400" MinHeight="300"
+        DataContext="{Binding RelativeSource={RelativeSource Mode=Self}}">
+    <Window.InputBindings>
+        <KeyBinding Command="{Binding BrowseCommand}" Key="B" Modifiers="Ctrl" />
+        <KeyBinding Command="{Binding RefreshCommand}" Key="F5" />
+    </Window.InputBindings>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Button Grid.Row="0" Margin="5" Padding="5" HorizontalAlignment="Right" Content="Browse... (Ctrl+B)" Command="{Binding BrowseCommand}"/>
+        <ContentPresenter Grid.Row="1" Focusable="True" GotFocus="PreviewContent_GotFocus">
+            <ContentPresenter.Content>
+                <Label HorizontalAlignment="Center" VerticalAlignment="Center" IsEnabled="False" Content="{Binding PreviewStatusText}" />
+            </ContentPresenter.Content>
+        </ContentPresenter>
+        <Button Grid.Row="2" Margin="5" Padding="5" HorizontalAlignment="Right" Content="Refresh (F5)" Command="{Binding RefreshCommand}"/>
+    </Grid>
+</Window>
