@@ -7,3 +7,4 @@ Encoding and line terminator choice are kept the default for files created and e
 Steps:
 
 1. [Create the UI](https://geelaw.blog/entries/ipreviewhandlerframe-wpf-1-ui-assoc/#create-ui)
+2. [COM interop for file associations](https://geelaw.blog/entries/ipreviewhandlerframe-wpf-1-ui-assoc/#com-assoc)

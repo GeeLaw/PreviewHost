@@ -55,6 +55,8 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="BrowseCommand.cs" />
+    <Compile Include="Interop\HResult.cs" />
+    <Compile Include="Interop\PreviewHandlerDiscovery.cs" />
     <Compile Include="RefreshCommand.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
