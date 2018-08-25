@@ -7,10 +7,12 @@
         Title="PreviewWindow"
         Height="450" Width="800"
         MinWidth="400" MinHeight="300"
+        Closing="PreviewHost_Closing"
         DataContext="{Binding RelativeSource={RelativeSource Mode=Self}}">
     <Window.InputBindings>
         <KeyBinding Command="{Binding BrowseCommand}" Key="B" Modifiers="Ctrl" />
         <KeyBinding Command="{Binding RefreshCommand}" Key="F5" />
+        <KeyBinding Command="{Binding ExitCommand}" Key="Esc" />
     </Window.InputBindings>
     <Grid>
         <Grid.RowDefinitions>

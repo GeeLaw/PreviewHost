@@ -1,4 +1,5 @@
 ﻿using System.Windows;
+using System.ComponentModel;
 using System.Windows.Input;
 
 namespace PreviewHost
@@ -25,8 +26,9 @@ namespace PreviewHost
 
         public ICommand BrowseCommand { get; private set; }
         public ICommand RefreshCommand { get; private set; }
+        public ICommand ExitCommand { get; private set; }
 
-        public readonly DependencyProperty PreviewStatusTextProperty = DependencyProperty.Register("PreviewStatusText", typeof(string), typeof(PreviewWindow));
+        public static readonly DependencyProperty PreviewStatusTextProperty = DependencyProperty.Register("PreviewStatusText", typeof(string), typeof(PreviewWindow));
 
         public string PreviewStatusText
         {
@@ -38,6 +40,7 @@ namespace PreviewHost
         {
             BrowseCommand = new BrowseCommand(this);
             RefreshCommand = new RefreshCommand(this);
+            ExitCommand = new ExitCommand(this);
             InitializeComponent();
             File = file;
             LoadPreview();
@@ -58,12 +61,17 @@ namespace PreviewHost
             // giving up. Also, a read-world application should NOT put this
             // text visible to Narrator before the preview handler crashes.
             // For now, we just keep it simple.
-            PreviewStatusText = "Preview handler crashed.";
+            PreviewStatusText = "A preview should be here.";
         }
 
         private void PreviewContent_GotFocus(object sender, RoutedEventArgs e)
         {
             // TODO: Deal with focus changes.
+        }
+
+        private void PreviewHost_Closing(object sender, CancelEventArgs e)
+        {
+            UnloadPreview();
         }
     }
 }
