@@ -21,7 +21,7 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <Button Grid.Row="0" Margin="5" Padding="5" HorizontalAlignment="Right" Content="Browse... (Ctrl+B)" Command="{Binding BrowseCommand}"/>
-        <ContentPresenter Grid.Row="1" Focusable="True" GotFocus="PreviewContent_GotFocus">
+        <ContentPresenter Grid.Row="1" Name="contentPresenter" Focusable="True" GotFocus="PreviewContent_GotFocus" Loaded="PreviewHost_Loaded" SizeChanged="PreviewHost_SizeChanged">
             <ContentPresenter.Content>
                 <Label HorizontalAlignment="Center" VerticalAlignment="Center" IsEnabled="False" Content="{Binding PreviewStatusText}" />
             </ContentPresenter.Content>
