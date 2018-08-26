@@ -22,9 +22,15 @@ namespace PreviewHost.Interop
         interface IQueryAssociations
         {
             [PreserveSig]
-            HResult Init([In] AssocF flags, [In, Optional] string pszAssoc, [In, Optional] IntPtr hkProgid, [In, Optional] IntPtr hwnd);
+            HResult Init([In] AssocF flags,
+                [In, Optional, MarshalAs(UnmanagedType.LPWStr)] string pszAssoc,
+                [In, Optional] IntPtr hkProgid,
+                [In, Optional] IntPtr hwnd);
             [PreserveSig]
-            HResult GetString([In] AssocF flags, [In] AssocStr str, [In, Optional] string pszExtra, [Out, Optional] StringBuilder pwszOut, [In, Out] ref uint pcchOut);
+            HResult GetString([In] AssocF flags, [In] AssocStr str,
+                [In, Optional, MarshalAs(UnmanagedType.LPWStr)] string pszExtra,
+                [Out, Optional, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pwszOut,
+                [In, Out] ref uint pcchOut);
             // Method slots beyond GetString are ignored since they are not used.
         }
 
