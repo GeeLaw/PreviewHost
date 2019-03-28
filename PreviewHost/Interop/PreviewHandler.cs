@@ -182,11 +182,10 @@ namespace PreviewHost.Interop
             catch
             {
                 if (previewHandler != null)
-                {
                     Marshal.ReleaseComObject(previewHandler);
-                    previewHandler = null;
-                }
-                Marshal.Release(pPreviewHandler);
+                previewHandler = null;
+                if (pPreviewHandler != IntPtr.Zero)
+                    Marshal.Release(pPreviewHandler);
                 pPreviewHandler = IntPtr.Zero;
                 comSite.Dispose();
                 comSite = null;
@@ -212,6 +211,7 @@ namespace PreviewHost.Interop
             var iid = IPreviewHandlerIid;
             var cannotCreate = "Cannot create class " + clsid.ToString() + " as IPreviewHandler.";
             var cannotCast = "Cannot cast class " + clsid.ToString() + " as IObjectWithSite.";
+            var cannotSetSite = "Cannot set site to the preview handler object.";
             // Important: manully calling CoCreateInstance is necessary.
             // If we use Activator.CreateInstance(Type.GetTypeFromCLSID(...)),
             // CLR will allow in-process server, which defeats isolation and
@@ -227,12 +227,20 @@ namespace PreviewHost.Interop
             if ((int)hr < 0)
                 throw new COMException(cannotCreate, (int)hr);
             pPreviewHandler = pph;
-            previewHandler = (IPreviewHandler)Marshal.GetUniqueObjectForIUnknown(pph);
-            var objectWithSite = (IObjectWithSite)previewHandler;
+            var previewHandlerObject = Marshal.GetUniqueObjectForIUnknown(pph);
+            previewHandler = previewHandlerObject as IPreviewHandler;
+            if (previewHandler == null)
+            {
+                Marshal.ReleaseComObject(previewHandlerObject);
+                throw new COMException(cannotCreate);
+            }
+            var objectWithSite = previewHandlerObject as IObjectWithSite;
+            if (objectWithSite == null)
+                throw new COMException(cannotCast);
             hr = objectWithSite.SetSite(comSite);
             if ((int)hr < 0)
-                throw new COMException("Cannot set site to the preview handler object.", (int)hr);
-            visuals = previewHandler as IPreviewHandlerVisuals;
+                throw new COMException(cannotSetSite, (int)hr);
+            visuals = previewHandlerObject as IPreviewHandlerVisuals;
         }
 
         #region Initialization interfaces
@@ -276,7 +284,7 @@ namespace PreviewHost.Interop
         /// <summary>
         /// Tries to initialize the preview handler with an IStream.
         /// </summary>
-        /// <exception cref="COMException">This exception is thrown if QueryInterface fails for reason other than E_NOINTERFACE, or if IInitializeWithStream.Initialize fails for reason other than E_NOTIMPL.</exception>
+        /// <exception cref="COMException">This exception is thrown if IInitializeWithStream.Initialize fails for reason other than E_NOTIMPL.</exception>
         /// <exception cref="ArgumentOutOfRangeException">Thrown if mode is neither Read nor ReadWrite.</exception>
         /// <param name="stream">The IStream interface used to initialize the preview handler.</param>
         /// <param name="mode">The storage mode, must be Read or ReadWrite.</param>
@@ -285,26 +293,16 @@ namespace PreviewHost.Interop
         {
             if (mode != StorageMode.Read && mode != StorageMode.ReadWrite)
                 throw new ArgumentOutOfRangeException("mode", mode, "The argument mode must be Read or ReadWrite.");
-            var iid = IInitializeWithStreamIid;
-            IntPtr piws;
-            var hr = Marshal.QueryInterface(pPreviewHandler, ref iid, out piws);
-            if (hr == (int)HResult.E_NOINTERFACE || piws == IntPtr.Zero)
+            var iws = previewHandler as IInitializeWithStream;
+            if (iws == null)
                 return false;
-            var iws = (IInitializeWithStream)Marshal.GetUniqueObjectForIUnknown(piws);
-            try
-            {
-                var hrr = iws.Initialize(stream, mode);
-                if (hrr == HResult.E_NOTIMPL)
-                    return false;
-                if ((int)hrr < 0)
-                    throw new COMException("IInitializeWithStream.Initialize failed.", (int)hrr);
-                init = true;
-                return true;
-            }
-            finally
-            {
-                Marshal.ReleaseComObject(iws);
-            }
+            var hr = iws.Initialize(stream, mode);
+            if (hr == HResult.E_NOTIMPL)
+                return false;
+            if ((int)hr < 0)
+                throw new COMException("IInitializeWithStream.Initialize failed.", (int)hr);
+            init = true;
+            return true;
         }
 
         /// <summary>
@@ -321,26 +319,16 @@ namespace PreviewHost.Interop
             EnsureNotInitialized();
             if (mode != StorageMode.Read && mode != StorageMode.ReadWrite)
                 throw new ArgumentOutOfRangeException("mode", mode, "The argument mode must be Read or ReadWrite.");
-            var iid = IInitializeWithStreamIid;
-            IntPtr piws;
-            var hr = Marshal.QueryInterface(pPreviewHandler, ref iid, out piws);
-            if (hr == (int)HResult.E_NOINTERFACE || piws == IntPtr.Zero)
+            var iws = previewHandler as IInitializeWithStreamNative;
+            if (iws == null)
                 return false;
-            var iws = (IInitializeWithStreamNative)Marshal.GetUniqueObjectForIUnknown(piws);
-            try
-            {
-                var hrr = iws.Initialize(pStream, mode);
-                if (hrr == HResult.E_NOTIMPL)
-                    return false;
-                if ((int)hrr < 0)
-                    throw new COMException("IInitializeWithStream.Initialize failed.", (int)hrr);
-                init = true;
-                return true;
-            }
-            finally
-            {
-                Marshal.ReleaseComObject(iws);
-            }
+            var hr = iws.Initialize(pStream, mode);
+            if (hr == HResult.E_NOTIMPL)
+                return false;
+            if ((int)hr < 0)
+                throw new COMException("IInitializeWithStream.Initialize failed.", (int)hr);
+            init = true;
+            return true;
         }
 
         /// <summary>
@@ -357,26 +345,16 @@ namespace PreviewHost.Interop
             EnsureNotInitialized();
             if (mode != StorageMode.Read && mode != StorageMode.ReadWrite)
                 throw new ArgumentOutOfRangeException("mode", mode, "The argument mode must be Read or ReadWrite.");
-            var iid = IInitializeWithItemIid;
-            IntPtr piwi;
-            var hr = Marshal.QueryInterface(pPreviewHandler, ref iid, out piwi);
-            if (hr == (int)HResult.E_NOINTERFACE || piwi == IntPtr.Zero)
+            var iwi = previewHandler as IInitializeWithItem;
+            if (iwi == null)
                 return false;
-            var iwi = (IInitializeWithItem)Marshal.GetUniqueObjectForIUnknown(piwi);
-            try
-            {
-                var hrr = iwi.Initialize(psi, mode);
-                if (hrr == HResult.E_NOTIMPL)
-                    return false;
-                if ((int)hrr < 0)
-                    throw new COMException("IInitializeWithItem.Initialize failed.", (int)hrr);
-                init = true;
-                return true;
-            }
-            finally
-            {
-                Marshal.ReleaseComObject(iwi);
-            }
+            var hr = iwi.Initialize(psi, mode);
+            if (hr == HResult.E_NOTIMPL)
+                return false;
+            if ((int)hr < 0)
+                throw new COMException("IInitializeWithItem.Initialize failed.", (int)hr);
+            init = true;
+            return true;
         }
 
         /// <summary>
@@ -393,26 +371,16 @@ namespace PreviewHost.Interop
             EnsureNotInitialized();
             if (mode != StorageMode.Read && mode != StorageMode.ReadWrite)
                 throw new ArgumentOutOfRangeException("mode", mode, "The argument mode must be Read or ReadWrite.");
-            var iid = IInitializeWithFileIid;
-            IntPtr piwf;
-            var hr = Marshal.QueryInterface(pPreviewHandler, ref iid, out piwf);
-            if (hr == (int)HResult.E_NOINTERFACE || piwf == IntPtr.Zero)
+            var iwf = previewHandler as IInitializeWithFile;
+            if (iwf == null)
                 return false;
-            var iwf = (IInitializeWithFile)Marshal.GetUniqueObjectForIUnknown(piwf);
-            try
-            {
-                var hrr = iwf.Initialize(path, mode);
-                if (hrr == HResult.E_NOTIMPL)
-                    return false;
-                if ((int)hrr < 0)
-                    throw new COMException("IInitializeWithFile.Initialize failed.", (int)hrr);
-                init = true;
-                return true;
-            }
-            finally
-            {
-                Marshal.ReleaseComObject(iwf);
-            }
+            var hr = iwf.Initialize(path, mode);
+            if (hr == HResult.E_NOTIMPL)
+                return false;
+            if ((int)hr < 0)
+                throw new COMException("IInitializeWithFile.Initialize failed.", (int)hr);
+            init = true;
+            return true;
         }
 
         /// <summary>
@@ -629,10 +597,14 @@ namespace PreviewHost.Interop
             }
             else
             {
-                // Field previewHandler must not be used when called from the finalizer.
-                var ph = (IPreviewHandler)Marshal.GetUniqueObjectForIUnknown(pPreviewHandler);
-                ph.Unload();
-                Marshal.ReleaseComObject(previewHandler);
+                // We're in the finalizer.
+                // Field previewHandler might have been finalized at this point.
+                // Get a new RCW.
+                var phObject = Marshal.GetUniqueObjectForIUnknown(pPreviewHandler);
+                var ph = phObject as IPreviewHandler;
+                if (ph != null)
+                    ph.Unload();
+                Marshal.ReleaseComObject(phObject);
             }
             Marshal.Release(pPreviewHandler);
         }

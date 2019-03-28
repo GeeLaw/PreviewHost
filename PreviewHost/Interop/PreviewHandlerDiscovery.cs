@@ -48,10 +48,13 @@ namespace PreviewHost.Interop
             var hr = AssocCreate(QueryAssociationsClsid, ref iid, out pqa);
             if ((int)hr < 0)
                 return null;
-            var queryAssoc = (IQueryAssociations)Marshal.GetUniqueObjectForIUnknown(pqa);
+            var queryAssocObject = Marshal.GetUniqueObjectForIUnknown(pqa);
+            var queryAssoc = queryAssocObject as IQueryAssociations;
             Marshal.Release(pqa);
             try
             {
+                if (queryAssoc == null)
+                    return null;
                 hr = queryAssoc.Init(AssocF.InitDefaultToStar, extension, IntPtr.Zero, hwnd);
                 if ((int)hr < 0)
                     return null;
@@ -68,7 +71,7 @@ namespace PreviewHost.Interop
             }
             finally
             {
-                Marshal.ReleaseComObject(queryAssoc);
+                Marshal.ReleaseComObject(queryAssocObject);
             }
         }
     }
